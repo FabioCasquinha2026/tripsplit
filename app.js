@@ -321,16 +321,22 @@ function renderExpenses() {
                 <div class="expense-actions">
 
                   <button
-                    class="secondary expense-edit"
-                    data-edit-expense="${e.id}">
-                    Editar
-                  </button>
+  class="secondary expense-edit"
+  data-edit-expense="${e.id}">
+  Editar
+</button>
 
-                  <button
-                    class="secondary expense-delete"
-                    data-delete-expense="${e.id}">
-                    Apagar
-                  </button>
+<button
+  class="secondary expense-duplicate"
+  data-duplicate-expense="${e.id}">
+  Duplicar
+</button>
+
+<button
+  class="secondary expense-delete"
+  data-delete-expense="${e.id}">
+  Apagar
+</button>
 
                 </div>
 
