@@ -689,7 +689,46 @@ function startEditExpense(id) {
 
   $("descriptionInput").focus();
 }
+function duplicateExpense(id){
+  const expense = state.expenses.find(e => e.id === id);
 
+  if(!expense) return;
+
+  state.editingExpenseId = null;
+
+  $("descriptionInput").value =
+    expense.description || "";
+
+  $("amountInput").value =
+    expense.amount ?? "";
+
+  $("currencyInput").value =
+    expense.currency || "EUR";
+
+  $("rateInput").value =
+    expense.currency === "EUR"
+      ? ""
+      : expense.rate_to_eur ?? "";
+
+  $("payerInput").value =
+    expense.payer_id || "";
+
+  state.selectedParticipants =
+    new Set(expense.participant_ids || []);
+
+  $("saveExpenseBtn").textContent =
+    "Guardar despesa";
+
+  $("saveStatus").textContent =
+    "Despesa duplicada. Pode alterar os dados antes de guardar.";
+
+  $("saveStatus").classList.remove("hidden");
+
+  renderChecks();
+  renderBalances();
+
+  $("descriptionInput").focus();
+}
 async function deleteExpense(id) {
   const expense =
     state.expenses.find(
@@ -1396,11 +1435,14 @@ function wireEvents() {
 
       const deleteId =
         e.target.dataset.deleteExpense;
-
+const duplicateId =
+  e.target.dataset.duplicateExpense;
       if (editId) {
         startEditExpense(editId);
       }
-
+if (duplicateId) {
+  duplicateExpense(duplicateId);
+}
       if (deleteId) {
         deleteExpense(deleteId);
       }
