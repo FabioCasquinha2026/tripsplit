@@ -84,9 +84,17 @@
       </section>
 
       <section class="card">
-        <h2>Despesas</h2>
-        <div id="expensesList"></div>
-      </section>
+  <h2>Despesas</h2>
+
+  <input
+    id="expenseSearchInput"
+    type="search"
+    placeholder="Pesquisar despesas..."
+    autocomplete="off"
+  >
+
+  <div id="expensesList"></div>
+</section>
 
       <section class="card">
         <h2>Saldo</h2>
@@ -103,5 +111,39 @@
 
   <script src="config.js"></script>
   <script src="app.js"></script>
+  <script>
+(() => {
+  const input = document.getElementById("expenseSearchInput");
+  const list = document.getElementById("expensesList");
+
+  if (!input || !list) return;
+
+  function aplicarPesquisa() {
+    const pesquisa = input.value.trim().toLowerCase();
+
+    const despesas = list.querySelectorAll(".expense");
+
+    despesas.forEach(despesa => {
+      const texto = despesa.textContent.toLowerCase();
+
+      despesa.style.display =
+        !pesquisa || texto.includes(pesquisa)
+          ? ""
+          : "none";
+    });
+  }
+
+  input.addEventListener("input", aplicarPesquisa);
+
+  const observer = new MutationObserver(aplicarPesquisa);
+
+  observer.observe(list, {
+    childList: true,
+    subtree: true
+  });
+
+  aplicarPesquisa();
+})();
+  </script>
 </body>
 </html>
