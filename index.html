@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#081229">
+  <title>TripSplit</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">🇨🇴 <span>TripSplit</span></div>
+    <div id="tripTitle" class="trip-subtitle">Colômbia 2026</div>
+  </header>
+
+  <main id="app">
+    <section id="joinView" class="card">
+      <h1>Entrar numa viagem</h1>
+      <label>Código da viagem</label>
+      <input id="tripCodeInput" value="COL26" autocomplete="off">
+      <div class="grid2">
+        <button id="joinBtn" class="primary">Ligar</button>
+        <button id="createBtn" class="secondary">Criar viagem</button>
+      </div>
+      <div id="joinError" class="error hidden"></div>
+    </section>
+
+    <section id="tripView" class="hidden">
+      <section class="card">
+        <h1 id="tripName">Colômbia 2026 · COL26</h1>
+        <p class="muted">Ligação online ativa.</p>
+      </section>
+
+      <section class="card">
+        <h2>Participantes</h2>
+        <div id="participantsList" class="chips"></div>
+        <div class="grid2">
+          <input id="participantInput" placeholder="Nome" maxlength="60">
+          <button id="addParticipantBtn" class="primary">Adicionar</button>
+        </div>
+        <div id="participantError" class="error hidden"></div>
+      </section>
+
+      <section class="card">
+        <h2>Nova despesa</h2>
+        <button id="voiceBtn" class="voice">🎙️ Introduzir por voz</button>
+        <div id="voiceStatus" class="muted voice-status"></div>
+
+        <label>Descrição</label>
+        <input id="descriptionInput" placeholder="Ex.: Jantar" maxlength="120">
+
+        <div class="grid2">
+          <div>
+            <label>Valor</label>
+            <input id="amountInput" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+          </div>
+          <div>
+            <label>Moeda</label>
+            <select id="currencyInput">
+              <option value="EUR">EUR</option>
+              <option value="COP">COP</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="conversionBox" class="conversion">Conversão: —</div>
+
+        <label>Taxa para EUR</label>
+        <input id="rateInput" type="number" inputmode="decimal" step="0.000001" placeholder="Ex.: 0,00022">
+
+        <label>Quem pagou?</label>
+        <select id="payerInput"></select>
+
+        <label>Quem participou?</label>
+        <div class="grid2">
+          <button id="allBtn" class="secondary">Todos</button>
+          <button id="noneBtn" class="secondary">Nenhum</button>
+        </div>
+        <div id="beneficiariesList" class="checks"></div>
+
+        <button id="saveExpenseBtn" class="primary full">Guardar despesa</button>
+        <div id="saveStatus" class="success hidden"></div>
+      </section>
+
+      <section class="card">
+        <h2>Despesas</h2>
+        <div id="expensesList"></div>
+      </section>
+
+      <section class="card">
+        <h2>Saldo</h2>
+        <div id="balances"></div>
+      </section>
+
+      <section class="card">
+        <h2>Acerto de Contas</h2>
+        <p class="muted">O sistema simplifica os pagamentos para reduzir o número de transferências.</p>
+        <div id="settlements"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
