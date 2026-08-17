@@ -222,9 +222,95 @@ function setupVoice(){
   $("voiceBtn").onclick=()=>state.listening?r.stop():r.start();
 }
 function parseVoice(text){
-  $("descriptionInput").value=text.replace(/\b(\d+(?:[.,]\d+)?)\s*(euros?|€|cop|pesos?)\b/ig,"").trim()||"Despesa";
-  const m=text.match(/(\d+(?:[.,]\d+)?)\s*(euros?|€|cop|pesos?)?/i);
-  if(m){$("amountInput").value=m[1].replace(",","."); if(/cop|peso/i.test(m[2]||""))$("currencyInput").value="COP"; else $("currencyInput").value="EUR";}
+  const original = text.trim();
+
+  // Normaliza o texto apenas para facilitar a procura do nome.
+  const normalized = original
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  // 1. Procurar quem pagou.
+  // Exemplos:
+  // "pago pelo Fábio"
+  // "pago pela Rosa"
+  // "Rosa pagou"
+  // "foi pago pelo Gongo"
+  let payer = null;
+
+  const payerPatterns = [
+    /(?:pago|pagou|paga|pagamento)\s+(?:pelo|pela|por)\s+(.+?)(?=\s+(?:e|para|dos|das|de|no|na)\b|$)/i,
+    /(?:foi\s+)?pago\s+(?:pelo|pela|por)\s+(.+?)(?=\s+(?:e|para|dos|das|de|no|na)\b|$)/i,
+    /^(.+?)\s+pagou\b/i
+  ];
+
+  for (const pattern of payerPatterns) {
+    const match = normalized.match(pattern);
+
+    if (match) {
+      const spokenName = match[1].trim();
+
+      payer = state.participants.find(p => {
+        const participantName = p.name
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .trim();
+
+        return (
+          participantName === spokenName ||
+          participantName.includes(spokenName) ||
+          spokenName.includes(participantName)
+        );
+      });
+
+      if (payer) break;
+    }
+  }
+
+  // 2. Procurar valor e moeda.
+  const amountMatch = original.match(
+    /(\d+(?:[.,]\d+)?)\s*(euros?|€|cop|pesos?)/i
+  );
+
+  if (amountMatch) {
+    $("amountInput").value = amountMatch[1].replace(",", ".");
+
+    if (/cop|peso/i.test(amountMatch[2])) {
+      $("currencyInput").value = "COP";
+    } else {
+      $("currencyInput").value = "EUR";
+    }
+  }
+
+  // 3. Retirar do texto a parte do valor/moeda.
+  let description = original
+    .replace(
+      /(\d+(?:[.,]\d+)?)\s*(euros?|€|cop|pesos?)/gi,
+      ""
+    )
+    .trim();
+
+  // 4. Retirar a informação "pago pelo..." da descrição.
+  description = description
+    .replace(
+      /\b(?:foi\s+)?pago\s+(?:pelo|pela|por)\s+.+$/i,
+      ""
+    )
+    .replace(
+      /\b(?:pago|pagou)\s+(?:pelo|pela|por)\s+.+$/i,
+      ""
+    )
+    .trim();
+
+  // 5. Se encontramos o participante, seleccioná-lo como pagador.
+  if (payer) {
+    $("payerInput").value = payer.id;
+  }
+
+  // 6. Se não houver descrição, usar "Despesa".
+  $("descriptionInput").value = description || "Despesa";
+
   renderBalances();
 }
 
