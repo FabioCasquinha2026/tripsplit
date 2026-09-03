@@ -255,8 +255,68 @@ function render() {
   renderChecks();
   renderExpenses();
   renderBalances();
+  renderTripSummary();
 }
+function renderTripSummary() {
+  const total = state.expenses.reduce(
+    (sum, e) => sum + (Number(e.amount_eur) || 0),
+    0
+  );
 
+  const participantCount = state.participants.length;
+  const expenseCount = state.expenses.length;
+
+  const average = participantCount
+    ? total / participantCount
+    : 0;
+
+  const payments = state.participants.map(p => {
+    const paid = state.expenses
+      .filter(e => e.payer_id === p.id)
+      .reduce(
+        (sum, e) => sum + (Number(e.amount_eur) || 0),
+        0
+      );
+
+    return `
+      <div class="summary-person">
+        <strong>${esc(p.name)}</strong>
+        <span>${money(paid)}</span>
+      </div>
+    `;
+  }).join("");
+
+  const el = $("tripSummary");
+
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="summary-item">
+      <span>Total gasto</span>
+      <strong>${money(total)}</strong>
+    </div>
+
+    <div class="summary-item">
+      <span>Média por pessoa</span>
+      <strong>${money(average)}</strong>
+    </div>
+
+    <div class="summary-item">
+      <span>Despesas</span>
+      <strong>${expenseCount}</strong>
+    </div>
+
+    <div class="summary-item">
+      <span>Participantes</span>
+      <strong>${participantCount}</strong>
+    </div>
+
+    <div class="summary-payments">
+      <strong>Total pago por participante</strong>
+      ${payments || '<span class="muted">Nenhum pagamento.</span>'}
+    </div>
+  `;
+}
 function renderChecks() {
   $("beneficiariesList").innerHTML =
     state.participants
