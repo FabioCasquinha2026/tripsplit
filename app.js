@@ -548,7 +548,7 @@ function calcPreview() {
     return "Conversão: indique a taxa para EUR";
   }
 
-  const eur = amount * rate;
+  const eur = amount / rate;
 
   const n =
     state.selectedParticipants.size;
@@ -916,7 +916,7 @@ async function saveExpense() {
 
   const eur =
     Number(
-      (amount * rate).toFixed(2)
+      (amount / rate).toFixed(2)
     );
 
   try {
