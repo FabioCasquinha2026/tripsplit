@@ -21,6 +21,10 @@ const money = n =>
     currency: "EUR"
   }).format(Number(n) || 0);
 
+function convertToEur(amount, rate) {
+  return Number((amount * rate).toFixed(2));
+}
+
 const esc = s =>
   String(s ?? "").replace(/[&<>"']/g, m => ({
     "&": "&amp;",
@@ -537,18 +541,16 @@ function calcPreview() {
   const currency =
     $("currencyInput").value;
 
-  if (currency === "EUR") {
-    return `Conversão: ${money(amount)}`;
-  }
-
   const rate =
-    Number($("rateInput").value);
+    currency === "EUR"
+      ? 1
+      : Number($("rateInput").value);
 
   if (!rate) {
-    return "Conversão: indique a taxa para EUR";
+    return "Conversão: indique quantos EUR vale 1 unidade da moeda";
   }
 
-  const eur = amount / rate;
+  const eur = convertToEur(amount, rate);
 
   const n =
     state.selectedParticipants.size;
@@ -915,9 +917,7 @@ async function saveExpense() {
   }
 
   const eur =
-    Number(
-      (amount / rate).toFixed(2)
-    );
+    convertToEur(amount, rate);
 
   try {
     if (state.editingExpenseId) {
@@ -1038,6 +1038,9 @@ async function updateExpense(id, data) {
     );
   }
 
+  const eur =
+    convertToEur(data.amount, data.rate);
+
   if (sb) {
     const r = await sb
       .from("expenses")
@@ -1046,7 +1049,7 @@ async function updateExpense(id, data) {
         amount: data.amount,
         currency: data.currency,
         rate_to_eur: data.rate,
-        amount_eur: data.eur,
+        amount_eur: eur,
         payer_id: data.payer
       })
       .eq("id", id);
@@ -1087,7 +1090,7 @@ async function updateExpense(id, data) {
     amount: data.amount,
     currency: data.currency,
     rate_to_eur: data.rate,
-    amount_eur: data.eur,
+    amount_eur: eur,
     payer_id: data.payer,
     participant_ids: data.ids
   };
