@@ -25,6 +25,14 @@ function convertToEur(amount, rate) {
   return Number((amount * rate).toFixed(2));
 }
 
+function parseDecimal(value) {
+  return Number(
+    String(value)
+      .trim()
+      .replace(",", ".")
+  );
+}
+
 const esc = s =>
   String(s ?? "").replace(/[&<>"']/g, m => ({
     "&": "&amp;",
@@ -532,7 +540,7 @@ function renderBalances() {
 
 function calcPreview() {
   const amount =
-    Number($("amountInput").value);
+    parseDecimal($("amountInput").value);
 
   if (!amount) {
     return "Conversão: —";
@@ -544,7 +552,7 @@ function calcPreview() {
   const rate =
     currency === "EUR"
       ? 1
-      : Number($("rateInput").value);
+      : parseDecimal($("rateInput").value);
 
   if (!rate) {
     return "Conversão: indique quantos EUR vale 1 unidade da moeda";
@@ -856,7 +864,7 @@ async function saveExpense() {
     $("descriptionInput").value.trim();
 
   const amount =
-    Number($("amountInput").value);
+    parseDecimal($("amountInput").value);
 
   const currency =
     $("currencyInput").value;
@@ -864,7 +872,7 @@ async function saveExpense() {
   const rate =
     currency === "EUR"
       ? 1
-      : Number($("rateInput").value);
+      : parseDecimal($("rateInput").value);
 
   const payer =
     $("payerInput").value;
