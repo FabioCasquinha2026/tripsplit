@@ -178,17 +178,17 @@ async function syncPending() {
   await loadData();
 }
 function updateConnectionStatus(text) {
-
-function refreshConnectionStatus() {
-  updateConnectionStatus(
-    isOnline() ? "Online" : "Offline"
-  );
-}
   const el = $("connectionStatus");
 
   if (!el) return;
 
   el.textContent = text;
+}
+
+function refreshConnectionStatus() {
+  updateConnectionStatus(
+    isOnline() ? "Online" : "Offline"
+  );
 }
 
 window.addEventListener("online", async () => {
