@@ -1043,13 +1043,13 @@ async function deleteExpense(id) {
 
   const confirmed =
     window.confirm(
-      `Apagar a despesa "${expense.description}"?\\n\\nEsta ação não pode ser desfeita.`
+      `Apagar a despesa "${expense.description}"?\n\nEsta ação não pode ser desfeita.`
     );
 
   if (!confirmed) return;
 
   try {
-    if (sb) {
+    if (sb && isOnline()) {
       const relationResult =
         await sb
           .from("expense_participants")
@@ -1069,6 +1069,17 @@ async function deleteExpense(id) {
       if (expenseResult.error) {
         throw expenseResult.error;
       }
+
+    } else {
+      const queue =
+        getQueue();
+
+      queue.push({
+        type: "expense_delete",
+        id
+      });
+
+      setQueue(queue);
     }
 
     state.expenses =
@@ -1085,7 +1096,37 @@ async function deleteExpense(id) {
     saveLocal();
     render();
 
+    if (isOnline()) {
+      await syncPending();
+    }
+
   } catch (e) {
+    if (isOnline()) {
+      const queue =
+        getQueue();
+
+      queue.push({
+        type: "expense_delete",
+        id
+      });
+
+      setQueue(queue);
+
+      state.expenses =
+        state.expenses.filter(
+          e => e.id !== id
+        );
+
+      saveLocal();
+      render();
+
+      updateConnectionStatus(
+        "Online / por sincronizar"
+      );
+
+      return;
+    }
+
     alert(
       e.message ||
         "Não foi possível apagar a despesa."
