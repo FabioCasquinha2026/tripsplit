@@ -163,6 +163,11 @@ function saveLocal() {
 async function initSupabase() {
   if (!hasSupabase) return;
 
+  if (!isOnline()) {
+    updateConnectionStatus("Offline");
+    return;
+  }
+
   try {
     const mod = await import(
       "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
