@@ -258,6 +258,75 @@ async function createTrip(code, name) {
 }
 
 async function loadData() {
+  if (sb && isOnline()) {
+    try {
+      const [p, e] = await Promise.all([
+        sb
+          .from("participants")
+          .select("*")
+          .eq("trip_id", state.trip.id)
+          .order("created_at"),
+
+        sb
+          .from("expenses")
+          .select("*")
+          .eq("trip_id", state.trip.id)
+          .order("created_at", {
+            ascending: false
+          })
+      ]);
+
+      if (p.error) throw p.error;
+      if (e.error) throw e.error;
+
+      state.participants = p.data || [];
+
+      const expenses = e.data || [];
+      const ids = expenses.map(x => x.id);
+
+      let links = [];
+
+      if (ids.length) {
+        const r = await sb
+          .from("expense_participants")
+          .select("*")
+          .in("expense_id", ids);
+
+        if (r.error) throw r.error;
+
+        links = r.data || [];
+      }
+
+      state.expenses = expenses.map(x => ({
+        ...x,
+        participant_ids: links
+          .filter(l => l.expense_id === x.id)
+          .map(l => l.participant_id)
+      }));
+
+      saveLocal();
+
+    } catch (e) {
+      console.warn(
+        "Supabase indisponível. A utilizar dados locais.",
+        e
+      );
+
+      loadLocal();
+    }
+  } else {
+    loadLocal();
+  }
+
+  state.selectedParticipants =
+    new Set(
+      state.participants.map(
+        p => p.id
+      )
+    );
+
+  render();
+}
   if (sb) {
     const [p, e] = await Promise.all([
       sb
