@@ -1304,50 +1304,7 @@ async function updateExpense(id, data) {
   const eur =
     convertToEur(data.amount, data.rate);
 
-  if (sb) {
-    const r = await sb
-      .from("expenses")
-      .update({
-        description: data.description,
-        amount: data.amount,
-        currency: data.currency,
-        rate_to_eur: data.rate,
-        amount_eur: eur,
-        payer_id: data.payer
-      })
-      .eq("id", id);
-
-    if (r.error) throw r.error;
-
-    const del =
-      await sb
-        .from("expense_participants")
-        .delete()
-        .eq("expense_id", id);
-
-    if (del.error) {
-      throw del.error;
-    }
-
-    const ins =
-      await sb
-        .from("expense_participants")
-        .insert(
-          data.ids.map(
-            participantId => ({
-              expense_id: id,
-              participant_id:
-                participantId
-            })
-          )
-        );
-
-    if (ins.error) {
-      throw ins.error;
-    }
-  }
-
-  state.expenses[index] = {
+  const expense = {
     ...state.expenses[index],
     description: data.description,
     amount: data.amount,
@@ -1358,9 +1315,79 @@ async function updateExpense(id, data) {
     participant_ids: data.ids
   };
 
+  if (sb && isOnline()) {
+    try {
+      const r = await sb
+        .from("expenses")
+        .update({
+          description: data.description,
+          amount: data.amount,
+          currency: data.currency,
+          rate_to_eur: data.rate,
+          amount_eur: eur,
+          payer_id: data.payer
+        })
+        .eq("id", id);
+
+      if (r.error) throw r.error;
+
+      const del =
+        await sb
+          .from("expense_participants")
+          .delete()
+          .eq("expense_id", id);
+
+      if (del.error) {
+        throw del.error;
+      }
+
+      const ins =
+        await sb
+          .from("expense_participants")
+          .insert(
+            data.ids.map(
+              participantId => ({
+                expense_id: id,
+                participant_id:
+                  participantId
+              })
+            )
+          );
+
+      if (ins.error) {
+        throw ins.error;
+      }
+
+    } catch (e) {
+      console.warn(
+        "Não foi possível atualizar online. A guardar localmente.",
+        e
+      );
+
+      enqueue({
+        type: "expense_upsert",
+        expense
+      });
+
+      updateConnectionStatus(
+        "Offline / por sincronizar"
+      );
+    }
+  } else {
+    enqueue({
+      type: "expense_upsert",
+      expense
+    });
+
+    updateConnectionStatus(
+      "Offline / por sincronizar"
+    );
+  }
+
+  state.expenses[index] = expense;
+
   saveLocal();
 }
-
 function setupVoice() {
   const SR =
     window.SpeechRecognition ||
