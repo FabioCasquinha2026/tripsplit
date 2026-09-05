@@ -12,7 +12,42 @@ let state = {
   listening: false,
   editingExpenseId: null
 };
+function isOnline() {
+  return navigator.onLine;
+}
 
+function queueKey() {
+  return "tripsplit_queue_" + (state.trip?.code || "default");
+}
+
+function getQueue() {
+  try {
+    return JSON.parse(
+      localStorage.getItem(queueKey()) || "[]"
+    );
+  } catch (e) {
+    console.warn("Erro ao carregar fila offline.", e);
+    return [];
+  }
+}
+
+function setQueue(queue) {
+  localStorage.setItem(
+    queueKey(),
+    JSON.stringify(queue)
+  );
+}
+
+function enqueue(operation) {
+  const queue = getQueue();
+
+  queue.push({
+    ...operation,
+    queued_at: new Date().toISOString()
+  });
+
+  setQueue(queue);
+}
 const $ = id => document.getElementById(id);
 
 const money = n =>
