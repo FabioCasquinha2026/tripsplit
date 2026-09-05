@@ -1,1 +1,10 @@
-
+{
+  "name": "TripSplit – Colômbia 2026",
+  "short_name": "TripSplit",
+  "description": "Divisão de despesas da viagem Colômbia 2026",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#081229",
+  "theme_color": "#081229",
+  "lang": "pt-PT"
+}
