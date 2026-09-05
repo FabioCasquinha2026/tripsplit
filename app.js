@@ -186,24 +186,40 @@ async function initSupabase() {
 }
 
 async function findTrip(code) {
-  if (sb) {
-    const {
-      data,
-      error
-    } = await sb
-      .from("trips")
-      .select("*")
-      .eq("code", code)
-      .maybeSingle();
+  if (sb && isOnline()) {
+    try {
+      const {
+        data,
+        error
+      } = await sb
+        .from("trips")
+        .select("*")
+        .eq("code", code)
+        .maybeSingle();
 
-    if (error) throw error;
+      if (error) throw error;
 
-    return data;
+      if (data) {
+        localStorage.setItem(
+          "tripsplit_trip_" + code,
+          JSON.stringify(data)
+        );
+      }
+
+      return data;
+
+    } catch (e) {
+      console.warn(
+        "Não foi possível contactar o Supabase. A tentar dados locais.",
+        e
+      );
+    }
   }
 
   return JSON.parse(
-    localStorage.getItem("tripsplit_trip_" + code) ||
-    "null"
+    localStorage.getItem(
+      "tripsplit_trip_" + code
+    ) || "null"
   );
 }
 
