@@ -1636,7 +1636,11 @@ function wireEvents() {
           true
         );
 
-        await loadData();
+        if (isOnline()) {
+  await syncPending();
+}
+
+await loadData();
 
       } catch (e) {
         setError(
