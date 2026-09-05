@@ -197,8 +197,20 @@ function refreshConnectionStatus() {
   el.textContent = text;
 }
 
-window.addEventListener("online", () => {
-  updateConnectionStatus("Online");
+window.addEventListener("online", async () => {
+  updateConnectionStatus("A ligar...");
+
+  await initSupabase();
+
+  if (state.trip) {
+    await syncPending();
+
+    if (!getQueue().length) {
+      await loadData();
+    }
+  } else {
+    updateConnectionStatus("Online");
+  }
 });
 
 window.addEventListener("offline", () => {
