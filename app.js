@@ -1205,69 +1205,90 @@ async function saveExpense() {
 }
 
 async function createExpense(data) {
-  let expense;
+  const expense = {
+    id: crypto.randomUUID(),
+    trip_id: state.trip.id,
+    description: data.description,
+    amount: data.amount,
+    currency: data.currency,
+    rate_to_eur: data.rate,
+    amount_eur: data.eur,
+    payer_id: data.payer,
+    participant_ids: data.ids,
+    created_at: new Date().toISOString()
+  };
 
-  if (sb) {
-    const r = await sb
-      .from("expenses")
-      .insert({
-        trip_id: state.trip.id,
-        description: data.description,
-        amount: data.amount,
-        currency: data.currency,
-        rate_to_eur: data.rate,
-        amount_eur: data.eur,
-        payer_id: data.payer
-      })
-      .select()
-      .single();
+  if (sb && isOnline()) {
+    try {
+      const r = await sb
+        .from("expenses")
+        .insert({
+          id: expense.id,
+          trip_id: expense.trip_id,
+          description: expense.description,
+          amount: expense.amount,
+          currency: expense.currency,
+          rate_to_eur: expense.rate_to_eur,
+          amount_eur: expense.amount_eur,
+          payer_id: expense.payer_id,
+          created_at: expense.created_at
+        })
+        .select()
+        .single();
 
-    if (r.error) throw r.error;
+      if (r.error) throw r.error;
 
-    expense = r.data;
+      const r2 = await sb
+        .from("expense_participants")
+        .insert(
+          data.ids.map(id => ({
+            expense_id: expense.id,
+            participant_id: id
+          }))
+        );
 
-    const r2 = await sb
-      .from("expense_participants")
-      .insert(
-        data.ids.map(id => ({
-          expense_id: expense.id,
-          participant_id: id
-        }))
+      if (r2.error) {
+        await sb
+          .from("expenses")
+          .delete()
+          .eq("id", expense.id);
+
+        throw r2.error;
+      }
+
+      expense.created_at =
+        r.data.created_at || expense.created_at;
+
+    } catch (e) {
+      console.warn(
+        "Não foi possível guardar online. A guardar localmente.",
+        e
       );
 
-    if (r2.error) {
-      await sb
-        .from("expenses")
-        .delete()
-        .eq("id", expense.id);
+      enqueue({
+        type: "expense_upsert",
+        expense
+      });
 
-      throw r2.error;
+      updateConnectionStatus(
+        "Offline / por sincronizar"
+      );
     }
-
   } else {
-    expense = {
-      id: crypto.randomUUID(),
-      trip_id: state.trip.id,
-      description: data.description,
-      amount: data.amount,
-      currency: data.currency,
-      rate_to_eur: data.rate,
-      amount_eur: data.eur,
-      payer_id: data.payer,
-      participant_ids: data.ids,
-      created_at:
-        new Date().toISOString()
-    };
+    enqueue({
+      type: "expense_upsert",
+      expense
+    });
+
+    updateConnectionStatus(
+      "Offline / por sincronizar"
+    );
   }
 
-  state.expenses.unshift({
-    ...expense,
-    participant_ids: data.ids
-  });
+  state.expenses.unshift(expense);
 
   saveLocal();
 }
-
 async function updateExpense(id, data) {
   const index =
     state.expenses.findIndex(
