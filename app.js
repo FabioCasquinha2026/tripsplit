@@ -38,15 +38,144 @@ function setQueue(queue) {
   );
 }
 
-function enqueue(operation) {
+async function syncPending() {
+  if (!isOnline() || !sb || !state.trip) {
+    return;
+  }
+
   const queue = getQueue();
 
-  queue.push({
-    ...operation,
-    queued_at: new Date().toISOString()
-  });
+  if (!queue.length) {
+    updateConnectionStatus("Online");
+    return;
+  }
 
-  setQueue(queue);
+  updateConnectionStatus("A sincronizar...");
+
+  for (let i = 0; i < queue.length; i++) {
+    const operation = queue[i];
+
+    try {
+      if (operation.type === "participant_upsert") {
+        const p = operation.participant;
+
+        const r = await sb
+          .from("participants")
+          .upsert(
+            {
+              id: p.id,
+              trip_id: p.trip_id,
+              name: p.name,
+              created_at: p.created_at
+            },
+            {
+              onConflict: "id"
+            }
+          );
+
+        if (r.error) throw r.error;
+      }
+
+      if (operation.type === "participant_delete") {
+        const r = await sb
+          .from("participants")
+          .delete()
+          .eq("id", operation.id);
+
+        if (r.error) throw r.error;
+      }
+
+      if (operation.type === "expense_upsert") {
+        const e = operation.expense;
+
+        const r = await sb
+          .from("expenses")
+          .upsert(
+            {
+              id: e.id,
+              trip_id: e.trip_id,
+              description: e.description,
+              amount: e.amount,
+              currency: e.currency,
+              rate_to_eur: e.rate_to_eur,
+              amount_eur: e.amount_eur,
+              payer_id: e.payer_id,
+              created_at: e.created_at
+            },
+            {
+              onConflict: "id"
+            }
+          );
+
+        if (r.error) throw r.error;
+
+        const removeLinks = await sb
+          .from("expense_participants")
+          .delete()
+          .eq("expense_id", e.id);
+
+        if (removeLinks.error) {
+          throw removeLinks.error;
+        }
+
+        if (
+          Array.isArray(e.participant_ids) &&
+          e.participant_ids.length
+        ) {
+          const addLinks = await sb
+            .from("expense_participants")
+            .insert(
+              e.participant_ids.map(id => ({
+                expense_id: e.id,
+                participant_id: id
+              }))
+            );
+
+          if (addLinks.error) {
+            throw addLinks.error;
+          }
+        }
+      }
+
+      if (operation.type === "expense_delete") {
+        const removeLinks = await sb
+          .from("expense_participants")
+          .delete()
+          .eq("expense_id", operation.id);
+
+        if (removeLinks.error) {
+          throw removeLinks.error;
+        }
+
+        const removeExpense = await sb
+          .from("expenses")
+          .delete()
+          .eq("id", operation.id);
+
+        if (removeExpense.error) {
+          throw removeExpense.error;
+        }
+      }
+
+      queue.splice(i, 1);
+      i--;
+
+      setQueue(queue);
+
+    } catch (e) {
+      console.warn(
+        "Sincronização interrompida.",
+        e
+      );
+
+      updateConnectionStatus("Offline / por sincronizar");
+      return;
+    }
+  }
+
+  updateConnectionStatus("Sincronizado");
+
+  await loadData();
 }
 function updateConnectionStatus(text) {
   const el = $("connectionStatus");
