@@ -48,6 +48,21 @@ function enqueue(operation) {
 
   setQueue(queue);
 }
+function updateConnectionStatus(text) {
+  const el = $("connectionStatus");
+
+  if (!el) return;
+
+  el.textContent = text;
+}
+
+window.addEventListener("online", () => {
+  updateConnectionStatus("Online");
+});
+
+window.addEventListener("offline", () => {
+  updateConnectionStatus("Offline");
+});
 const $ = id => document.getElementById(id);
 
 const money = n =>
