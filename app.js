@@ -1259,6 +1259,78 @@ async function createExpense(data) {
     created_at: new Date().toISOString()
   };
 
+  state.expenses.unshift(expense);
+
+  saveLocal();
+
+  if (!isOnline() || !sb) {
+    const queue = getQueue();
+
+    queue.push({
+      type: "expense_upsert",
+      expense
+    });
+
+    setQueue(queue);
+
+    updateConnectionStatus(
+      "Offline / por sincronizar"
+    );
+
+    return;
+  }
+
+  try {
+    const r = await sb
+      .from("expenses")
+      .upsert(
+        {
+          id: expense.id,
+          trip_id: expense.trip_id,
+          description: expense.description,
+          amount: expense.amount,
+          currency: expense.currency,
+          rate_to_eur: expense.rate_to_eur,
+          amount_eur: expense.amount_eur,
+          payer_id: expense.payer_id,
+          created_at: expense.created_at
+        },
+        {
+          onConflict: "id"
+        }
+      );
+
+    if (r.error) throw r.error;
+
+    const r2 = await sb
+      .from("expense_participants")
+      .insert(
+        data.ids.map(id => ({
+          expense_id: expense.id,
+          participant_id: id
+        }))
+      );
+
+    if (r2.error) throw r2.error;
+
+    updateConnectionStatus("Online");
+
+  } catch (e) {
+    const queue = getQueue();
+
+    queue.push({
+      type: "expense_upsert",
+      expense
+    });
+
+    setQueue(queue);
+
+    updateConnectionStatus(
+      "Online / por sincronizar"
+    );
+  }
+}
+
   if (sb && isOnline()) {
     try {
       const r = await sb
