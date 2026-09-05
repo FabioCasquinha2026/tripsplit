@@ -1584,6 +1584,8 @@ if (duplicateId) {
 }
 
 (async () => {
+  refreshConnectionStatus();
+
   await initSupabase();
 
   wireEvents();
