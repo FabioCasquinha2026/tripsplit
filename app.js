@@ -55,6 +55,12 @@ function updateConnectionStatus(text) {
 
   el.textContent = text;
 }
+
+function refreshConnectionStatus() {
+  updateConnectionStatus(
+    isOnline() ? "Online" : "Offline"
+  );
+}
   const el = $("connectionStatus");
 
   if (!el) return;
